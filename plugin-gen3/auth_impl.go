@@ -28,9 +28,10 @@ type AccessTokenResponse struct {
 }
 
 type StorageInfoResponse struct {
-	Bucket    string `json:"bucket"`
-	Region    string `json:"region"`
-	KmsKeyArn string `json:"kms_key_arn"`
+	Bucket              string `json:"bucket"`
+	Region              string `json:"region"`
+	KmsKeyArn           string `json:"kms_key_arn"`
+	S3FilesFilesystemId string `json:"s3files_filesystem_id"`
 }
 
 func validateTokenAndExtractUserId(token string) (string, error) {
@@ -154,7 +155,7 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 	if err != nil {
 		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("could not parse '%s' response body: %w", url, err))
 	}
-	shared.Logger.Info("User's storage", "Bucket", storageInfoResponse.Bucket, "Region", storageInfoResponse.Region)
+	shared.Logger.Info("User's storage", "Bucket", storageInfoResponse.Bucket, "Region", storageInfoResponse.Region, "S3FilesFilesystemId", storageInfoResponse.S3FilesFilesystemId)
 
 	// exchange the OIDC client ID and secret for an access token
 	url = "http://fence-service/oauth2/token?grant_type=client_credentials&scope=openid%20user"
@@ -192,6 +193,13 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 			KmsKeyID: storageInfoResponse.KmsKeyArn,
 		},
 	}
+	if storageInfoResponse != nil && storageInfoResponse.S3FilesFilesystemId != "" {
+		configuration.Kubernetes.S3FilesFilesystemId = storageInfoResponse.S3FilesFilesystemId
+	} else {
+		// Explicitly wipe out any residual value from previous runs
+		configuration.Kubernetes.S3FilesFilesystemId = ""
+	}
+	shared.Logger.Info("Configuration", "S3FilesFilesystemId", configuration.Kubernetes.S3FilesFilesystemId)
 
 	// parse internal tags into the appropriate configuration
 	nodeSelector, ok := task.Tags["_NODE_SELECTOR"]
