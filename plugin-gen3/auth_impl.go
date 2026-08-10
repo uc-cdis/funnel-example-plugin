@@ -30,7 +30,6 @@ type AccessTokenResponse struct {
 type StorageInfoResponse struct {
 	Bucket              string `json:"bucket"`
 	Region              string `json:"region"`
-	KmsKeyArn           string `json:"kms_key_arn"`
 	S3FilesFilesystemId string `json:"s3files_filesystem_id"`
 }
 
@@ -190,7 +189,6 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 			Secret:   "N/A",
 			Bucket:   storageInfoResponse.Bucket,
 			Region:   storageInfoResponse.Region,
-			KmsKeyID: storageInfoResponse.KmsKeyArn,
 		},
 	}
 	if storageInfoResponse != nil && storageInfoResponse.S3FilesFilesystemId != "" {
