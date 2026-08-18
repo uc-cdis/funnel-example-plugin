@@ -99,6 +99,8 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 		{
 			Disabled: false,
 			Endpoint: S3Url,
+			Key:      "N/A",
+			Secret:   "N/A",
 			Bucket:   storageInfoResponse.Bucket,
 			Region:   storageInfoResponse.Region,
 		},
