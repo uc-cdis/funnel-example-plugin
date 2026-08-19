@@ -129,7 +129,7 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 	userJWT = strings.TrimPrefix(userJWT, "bearer ")
 	userId, err := validateTokenAndExtractUserId(userJWT)
 	if err != nil {
-		return errorResponse(http.StatusUnauthorized, fmt.Sprintf("unable to parse token: %w", err))
+		return errorResponse(http.StatusUnauthorized, fmt.Errorf("unable to parse token: %w", err).Error())
 	}
 
 	// get the S3 bucket and region for this user
@@ -137,22 +137,22 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 	url := "http://gen3-workflow-service/storage/setup"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("error creating HTTP request to '%s': %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("error creating HTTP request to '%s': %w", url, err).Error())
 	}
 	req.Header.Add("Authorization", "bearer "+userJWT)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("error making HTTP request to '%s': %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("error making HTTP request to '%s': %w", url, err).Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return errorResponse(int64(resp.StatusCode), fmt.Sprintf("http error from '%s': status code %d, body: %s", url, resp.StatusCode, string(body)))
+		return errorResponse(int64(resp.StatusCode), fmt.Errorf("http error from '%s': status code %d, body: %s", url, resp.StatusCode, string(body)).Error())
 	}
 	storageInfoResponse := new(StorageInfoResponse)
 	err = json.NewDecoder(resp.Body).Decode(storageInfoResponse)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("could not parse '%s' response body: %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("could not parse '%s' response body: %w", url, err).Error())
 	}
 	shared.Logger.Info("User's storage", "Bucket", storageInfoResponse.Bucket, "Region", storageInfoResponse.Region, "S3FilesFilesystemId", storageInfoResponse.S3FilesFilesystemId)
 
@@ -160,23 +160,23 @@ func (a Authorize) PluginAction(params map[string]string, headers map[string]*pr
 	url = "http://fence-service/oauth2/token?grant_type=client_credentials&scope=openid%20user"
 	req, err = http.NewRequest("POST", url, nil)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("error creating HTTP request to '%s': %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("error creating HTTP request to '%s': %w", url, err).Error())
 	}
 	auth := base64.StdEncoding.EncodeToString([]byte(OidcClientId + ":" + OidcClientSecret))
 	req.Header.Add("Authorization", "Basic "+auth)
 	resp, err = httpClient.Do(req)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("error making HTTP request to '%s': %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("error making HTTP request to '%s': %w", url, err).Error())
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return errorResponse(int64(resp.StatusCode), fmt.Sprintf("http error from '%s': status code %d, body: %s", url, resp.StatusCode, string(body)))
+		return errorResponse(int64(resp.StatusCode), fmt.Errorf("http error from '%s': status code %d, body: %s", url, resp.StatusCode, string(body)).Error())
 	}
 	accessTokenResponse := new(AccessTokenResponse)
 	err = json.NewDecoder(resp.Body).Decode(accessTokenResponse)
 	if err != nil {
-		return errorResponse(http.StatusInternalServerError, fmt.Sprintf("could not parse '%s' response body: %w", url, err))
+		return errorResponse(http.StatusInternalServerError, fmt.Errorf("could not parse '%s' response body: %w", url, err).Error())
 	}
 
 	// generate and return the worker configuration
